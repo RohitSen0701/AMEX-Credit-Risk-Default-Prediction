@@ -191,9 +191,22 @@ Run cells top to bottom — the notebook is organized into clearly labeled phase
 ## Future Improvements
  
 - Engineer features from the remaining ~180 statement-level columns beyond the 10 core longitudinal features used here
-- Add time-series-specific features (e.g., trend slopes, exponentially weighted moving averages, month-over-month deltas across all statements rather than first/last only)
+- Add time-series-specific features (e.g., trend slopes, exponentially weighted moving averages, month-over-month deltas across all statements rather than
+  first/last only)
 - Train on the full 458K-customer population instead of the 50K development sample, using out-of-core / GPU training
 - Try CatBoost and neural network (TabNet / MLP) baselines for comparison
 - Deploy the final model behind a lightweight REST API (FastAPI) with a simple scoring/monitoring dashboard
 - Add model-drift monitoring and periodic retraining logic for a production setting
 - Package feature engineering into reusable, testable pipeline classes (`sklearn.Pipeline` / custom transformers) instead of notebook cells
+
+## 👨‍💻 Author
+
+**Rohit Sen**
+
+M.Sc. Statistics, University of Delhi
+
+LinkedIn:
+https://www.linkedin.com/in/rohit-sen-50188b320/
+
+GitHub:
+https://github.com/RohitSen0701
