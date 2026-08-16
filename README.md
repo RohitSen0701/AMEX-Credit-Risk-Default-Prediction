@@ -60,48 +60,6 @@ Because false negatives are far costlier than false positives in this setting, t
 - **Class balance (customer-level):** ~74.6% non-default vs. ~25.4% default — moderately imbalanced
 **Development sample used in this project:** To keep iteration fast on limited compute, a stratified random sample of **50,000 customers** (~603K statement rows) was drawn from the full dataset and used for all EDA, feature engineering, and modeling. Customer-level target proportions in the sample (74.6% / 25.4%) closely match the full population, confirming the sample is representative.
  
-## Methodology
- 
-The notebook follows a structured, phase-based workflow:
- 
-**1. Development Sample Creation**
-Streamed the 5.5M-row parquet file in batches to profile it without loading it fully into memory, then drew a stratified 50,000-customer sample for development, validating that class balance and statement-history distribution matched the full population.
- 
-**2. Exploratory Data Analysis (EDA)**
-- Data quality audit (dtypes, duplicates, memory footprint)
-- Missingness analysis by feature and by customer history
-- Univariate distributions of key financial variables
-- Feature-vs-target relationships (bivariate default-rate analysis)
-- Temporal / customer-history analysis (statement cadence, history length, ~monthly statement gaps)
-**3. Feature Engineering**
-Converted longitudinal (multi-row-per-customer) data into a single feature vector per customer for 10 key longitudinal indicators (`P_2, B_1, B_2, B_9, D_42, D_48, D_61, D_44, D_55, D_75`):
-- **Latest value** — most recent statement value
-- **Historical statistics** — mean, median, min, max across full history
-- **First-to-latest change** — trend/direction of movement
-- **Historical volatility** — standard deviation across history
-- **Recent 3-statement average** — short-term behavior
-- **Recent-vs-historical delta** — whether recent behavior deviates from the customer's baseline
-- **Missingness/history features** — % missing, valid observation count (missingness itself carries signal for risk)
-**4. Preprocessing**
-- Dropped features with >50% missingness (e.g., `D_42`)
-- Customer-level stratified train/validation split (80/20)
-- Median imputation (fit on training data only, applied to both sets)
-- Removed constant and near-constant (>99.5% single value) features
-- Correlation filtering — removed one of each highly correlated (**r > 0.95**) feature pair, reducing ~100 candidate features down to a clean, non-redundant set
-- Balanced class weighting to counter the ~3:1 class imbalance
-**5. Model Development & Comparison**
-Trained and evaluated four models on an identical feature set and validation split:
-Logistic Regression → Random Forest → XGBoost → LightGBM
- 
-**6. Hyperparameter Tuning**
-`RandomizedSearchCV` (3-fold CV, 20 candidate combinations, optimized for PR-AUC) over depth, learning rate, subsampling, and regularization parameters for the top-performing model (XGBoost).
- 
-**7. Threshold Optimization**
-Swept the classification threshold from 0.20–0.80 and selected the threshold that maximizes precision subject to a **recall ≥ 93% business constraint** — reflecting the real-world cost asymmetry of missing a defaulter.
- 
-**8. Model Interpretation**
-- XGBoost built-in feature importance (gain-based)
-- SHAP (TreeExplainer) global summary plots to explain *direction* and *magnitude* of each feature's impact on individual predictions — the analysis a credit risk stakeholder would actually want to see.
 ## Objective
  
 Build a customer-level binary classifier that:
@@ -109,6 +67,8 @@ Build a customer-level binary classifier that:
 2. Meets a minimum recall target (≥93%) so very few true defaulters are missed
 3. Remains interpretable enough to explain individual risk scores to a non-technical audience (SHAP)
 4. Follows a leakage-free, production-realistic workflow (train-only fitting for imputers/scalers, customer-level splits, no target leakage across statements)
+
+
 ## Tech Stack
  
 | Category | Tools |
@@ -120,6 +80,96 @@ Build a customer-level binary classifier that:
 | Interpretability | SHAP |
 | Visualization | Matplotlib |
 | Environment | Jupyter Notebook / Kaggle Kernels |
+
+## 🔧 Methodology
+
+### 1. Data Understanding & EDA
+
+The analysis included:
+
+- Dataset structure and data-type analysis
+- Target distribution analysis
+- Missing-value analysis
+- Customer-level observation analysis
+- Distribution and outlier analysis
+- Temporal/transaction-history exploration
+- Feature-level statistical exploration
+
+---
+
+### 2. Data Preprocessing
+
+The preprocessing pipeline included:
+
+- Missing-value treatment
+- Categorical/date/identifier handling
+- Customer-level aggregation
+- Feature validation
+- Removal of unsuitable features
+
+Customer identifiers and date-related fields were not directly used as predictive numerical features.
+
+---
+
+### 3. Feature Engineering
+
+Longitudinal customer information was transformed into customer-level predictive features, including:
+
+- Latest values
+- Historical mean
+- Historical median
+- Historical minimum and maximum
+- Historical standard deviation
+- Recent-period averages
+- Change from first to latest observation
+- Recent vs. historical behavior
+- Missingness indicators
+- Valid observation counts
+
+This allowed the models to capture both the customer's current financial state and their historical behavior.
+
+---
+
+### 4. Feature Selection
+
+Feature selection was performed to reduce redundancy and improve model efficiency.
+
+The process included:
+
+- Removing constant features
+- Removing near-constant features
+- Correlation-based filtering
+
+Highly correlated feature pairs were reviewed using a **0.95 correlation threshold**.
+
+After feature selection:
+
+> **70 features remained for model development.**
+
+---
+
+### 5. Train–Validation Split
+
+The customer-level dataset was divided into:
+
+- **Training set:** 40,000 customers
+- **Validation set:** 10,000 customers
+
+The split was performed at the customer level to avoid using the same customer's observations across training and validation.
+
+---
+
+### 6. Class Imbalance
+
+The training data contained:
+
+- Class 0: **74.58%**
+- Class 1: **25.42%**
+
+Balanced class weighting / positive-class weighting was incorporated into the model development process to account for the imbalance.
+
+---
+
  
 ## Results
  
