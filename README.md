@@ -183,6 +183,43 @@ All four baseline models were evaluated on the same held-out 10,000-customer val
 | **LightGBM** (baseline) | 0.9427 | **0.8466** | **0.8985** | 0.6790 | 0.7735 |
  
 Gradient-boosted trees (XGBoost, LightGBM) consistently outperformed the linear and bagged-tree baselines, confirming non-linear feature interactions are important for this problem.
+
+---
+
+## 🔍 Model Interpretation
+
+### XGBoost Feature Importance
+
+The most important features included:
+
+1. `P_2_latest`
+2. `B_1_latest`
+3. `P_2_hist_mean`
+4. `B_2_latest`
+5. `B_9_latest`
+6. `D_48_latest`
+7. `D_44_hist_mean`
+8. `P_2_hist_valid_count`
+
+`P_2_latest` was the dominant feature in the XGBoost model.
+
+---
+
+### SHAP Analysis
+
+SHAP was used to understand both feature importance and the direction of each feature's contribution to model predictions.
+
+The analysis indicated that:
+
+- Lower `P_2_latest` values strongly pushed predictions toward higher default probability.
+- Lower historical `P_2` values also tended to increase predicted default risk.
+- Several recent and historical behavioral variables contributed to the model's predictions.
+- The model incorporated both current customer state and historical behavioral patterns.
+
+SHAP explanations represent **model associations and contributions, not causal relationships**.
+
+---
+
  
 ## Best Result
  
@@ -200,6 +237,25 @@ Gradient-boosted trees (XGBoost, LightGBM) consistently outperformed the linear 
 At this threshold, the model correctly identifies **2,368 of 2,542** true defaulters in the validation set (only 174 missed), while flagging 1,328 non-defaulters for extra review — a deliberate, business-driven trade-off that prioritizes catching risk over minimizing false alarms.
  
 **Top predictive drivers** (by XGBoost gain importance & confirmed by SHAP): the customer's most recent `P_2` risk score, historical average `P_2`, latest `B_1`/`B_2`/`B_9` balance features, and `D_48`/`D_44` delinquency indicators — consistent with how a real underwriting model would weight recency and risk-score trend most heavily.
+
+## 💡 Key Findings
+
+- Customer-level feature engineering substantially transformed the longitudinal transaction data into a modeling-ready dataset.
+- Current and historical `P_2` behavior was particularly influential in the final model.
+- XGBoost provided strong predictive performance compared with the baseline models.
+- Threshold optimization increased recall from **90.28% at the default 0.50 threshold to 93.15% at 0.40**.
+- The final model prioritizes identifying potential defaulters while accepting a higher number of false positives.
+
+---
+
+## ⚠️ Limitations
+
+- Model development was performed using a **50,000-customer sample** rather than the complete customer population.
+- The reported validation performance comes from the 10,000-customer validation set within this development sample.
+- The final threshold was selected using validation performance; therefore, an additional untouched test set would provide a stronger final generalization estimate.
+- LightGBM was evaluated as a baseline but was not further tuned due to computational cost.
+
+---
  
 ## Installation and Usage
  
